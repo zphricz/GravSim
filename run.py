@@ -34,12 +34,12 @@ spaceSys = spaceSystem.SpaceSystem()
 spaceSys.addBody(Star)
 spaceSys.addBody(Planet1)
 spaceSys.addBody(Moon1)
-spaceSys.addBody(Planet2)
+"""spaceSys.addBody(Planet2)
 spaceSys.addBody(Moon2)
 spaceSys.addBody(Planet3)
 spaceSys.addBody(Moon3)
 spaceSys.addBody(Planet4)
-spaceSys.addBody(Moon4)
+spaceSys.addBody(Moon4)"""
 
 # Starts the application and passes system information
 app = QtGui.QApplication(sys.argv)

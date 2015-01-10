@@ -201,6 +201,7 @@ class Example(QtGui.QWidget):
             if j == i.trackLength: k = 0
             else: k = j + 1
             while k != tail:
+                painter.setPen(QtGui.QColor(150, 150, 150))
                 painter.drawLine(self.width/2 + i.track[j].xComp/self.scale,
                                  self.height/2 - i.track[j].yComp/self.scale,
                                  self.width/2 + i.track[k].xComp/self.scale,
