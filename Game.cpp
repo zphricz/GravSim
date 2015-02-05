@@ -1,22 +1,21 @@
 #include <algorithm>
+#include <random>
+#include <ctime>
+#include <iostream>
 #include "Game.h"
 
-using std::max;
-using std::min;
+using namespace std;
 
 const int body_radius = 4;
 
-const double SCALE_DENOM = 2.25;
-const int move_factor = 15;
-
-static double abs(double val) {
-    if (val < 0) {
-        return -val;
-    }
-    return val;
-}
+const double BORDER_SIZE = 0.2;
+const int move_factor = 5;
 
 void Game::handle_input() {
+    static bool left_pressed = false;
+    static bool right_pressed = false;
+    static bool up_pressed = false;
+    static bool down_pressed = false;
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
@@ -31,16 +30,16 @@ void Game::handle_input() {
                 break;
             }
             case SDLK_SPACE: {
-                sys->bodies[selected_body].flip_movable();
+                sys.bodies[selected_body].flip_movable();
                 break;
             }
             case SDLK_BACKSPACE: {
-                if (sys->num_bodies() == 1) {
+                if (sys.num_bodies() == 1) {
                     running = false;
                 }
-                sys->bodies.erase(sys->bodies.begin() + selected_body);
-                if (selected_body == sys->num_bodies()) {
-                    selected_body--;
+                sys.bodies.erase(sys.bodies.begin() + selected_body);
+                if (selected_body >= sys.num_bodies()) {
+                    selected_body = sys.num_bodies() - 1;
                 }
                 break;
             }
@@ -51,39 +50,48 @@ void Game::handle_input() {
             case SDLK_LSHIFT:
             case SDLK_RSHIFT: {
                 selected_body++;
-                selected_body %= sys->num_bodies();
+                selected_body %= sys.num_bodies();
                 break;
             }
             case SDLK_LEFT: {
-                sys->bodies[selected_body].pos.x -= move_factor * scale;
-                sys->bodies[selected_body].register_current_position();
+                left_pressed = true;
                 break;
             }
             case SDLK_RIGHT: {
-                sys->bodies[selected_body].pos.x += move_factor * scale;
-                sys->bodies[selected_body].register_current_position();
+                right_pressed = true;
                 break;
             }
             case SDLK_UP: {
-                sys->bodies[selected_body].pos.y += move_factor * scale;
-                sys->bodies[selected_body].register_current_position();
+                up_pressed = true;
                 break;
             }
             case SDLK_DOWN: {
-                sys->bodies[selected_body].pos.y -= move_factor * scale;
-                sys->bodies[selected_body].register_current_position();
+                down_pressed = true;
                 break;
             }
             case SDLK_1: {
-                do_scale = !do_scale;
-                break;
-            }
-            case SDLK_2: {
                 time_step /= 2.0;
                 break;
             }
-            case SDLK_3: {
+            case SDLK_2: {
                 time_step *= 2.0;
+                break;
+            }
+            case SDLK_3: {
+                scale_option = NO_SCALE;
+                break;
+            }
+            case SDLK_4: {
+                scale_option = SCALE;
+                break;
+            }
+            case SDLK_5: {
+                scale_option = MAX_SCALE;
+                max_scale = scale;
+                break;
+            }
+            case SDLK_6: {
+                center_of_mass = !center_of_mass;
                 break;
             }
             default: {
@@ -92,78 +100,188 @@ void Game::handle_input() {
             }
             break;
         }
+        case SDL_KEYUP: {
+            switch (event.key.keysym.sym) {
+            case SDLK_LEFT: {
+                left_pressed = false;
+                break;
+            }
+            case SDLK_RIGHT: {
+                right_pressed = false;
+                break;
+            }
+            case SDLK_UP: {
+                up_pressed = false;
+                break;
+            }
+            case SDLK_DOWN: {
+                down_pressed = false;
+                break;
+            }
+            default: {
+                break;
+            }
+            }
+        }
         default: {
              break;
         }
         }
     }
+    bool register_new_position = false;
+    if (up_pressed) {
+        sys.bodies[selected_body].pos.y += move_factor * scale;
+        register_new_position = true;
+    }
+    if (down_pressed) {
+        sys.bodies[selected_body].pos.y -= move_factor * scale;
+        register_new_position = true;
+    }
+    if (left_pressed) {
+        sys.bodies[selected_body].pos.x -= move_factor * scale;
+        register_new_position = true;
+    }
+    if (right_pressed) {
+        sys.bodies[selected_body].pos.x += move_factor * scale;
+        register_new_position = true;
+    }
+    if (register_new_position) {
+        sys.bodies[selected_body].register_current_position();
+    }
 }
 
-Game::Game(System* sys, Screen* scr) : 
-    sys(sys),
+Game::Game(Screen* scr) : 
     scr(scr),
-    do_scale(true),
-    simulate(true),
+    simulate(false),
     running(true),
+    center_of_mass(false),
+    scale_option(MAX_SCALE),
     time_step(50.0),
     steps_per_frame(100),
     selected_body(0) {
-    double max_val = 0.0;
-    for (Body& body: sys->bodies) {
-        if (abs(body.pos.x) > max_val) {
-            max_val = abs(body.pos.x);
-        }
-        if (abs(body.pos.y) > max_val) {
-            max_val = abs(body.pos.y);
-        }
+#if 1
+    //                     x_pos         y_pos    x_vel    y_vel    mass trail
+    sys.add_body(            0.0,          0.0,     0.0,     0.0, 6.0E24,   0);
+    sys.add_body(    400000000.0,          0.0,     0.0,  1006.0, 7.0E22, 150);
+    sys.add_body(    420000000.0,          0.0,     0.0,  1500.0, 4.0E20, 150);
+    sys.add_body(            0.0,  400000000.0, -1006.0,     0.0, 7.0E22, 150);
+    sys.add_body(            0.0,  420000000.0, -1500.0,     0.0, 4.0E20, 150);
+    sys.add_body(   -400000000.0,          0.0,     0.0, -1006.0, 7.0E22, 150);
+    sys.add_body(   -420000000.0,          0.0,     0.0, -1500.0, 4.0E20, 150);
+    sys.add_body(            0.0, -400000000.0,  1006.0,     0.0, 7.0E22, 150);
+    sys.add_body(            0.0, -420000000.0,  1500.0,     0.0, 4.0E20, 150);
+    sys.set_minimum_distance(4000000.0);
+#else
+    srand(time(0));
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_real_distribution<> dis(-100, 100);
+    for (int i = 0; i < 100; ++i) {
+        double x_pos = dis(gen);
+        double y_pos = dis(gen);
+        double x_vel = 0.0;
+        double y_vel = 0.0;
+        x_vel = dis(gen) / 1000000.0;
+        y_vel = dis(gen) / 1000000.0;
+        double mass = 100.0;
+        sys.add_body(x_pos, y_pos, x_vel, y_vel, mass, 150);
     }
-    default_scale = max_val / (min(scr->width, scr->height) / SCALE_DENOM);
-    scale = default_scale;
+    sys.set_minimum_distance(2.0);
+#endif
+    set_scale_variables();
+    max_scale = scale;
 }
 
 Game::~Game() {
 }
 
+void Game::set_scale_variables() {
+    double right_bound = sys.bodies[0].pos.x;
+    double left_bound = sys.bodies[0].pos.x;
+    double up_bound = sys.bodies[0].pos.y;
+    double down_bound = sys.bodies[0].pos.y;
+    if (center_of_mass) {
+        center = (sys.bodies[0].pos * sys.bodies[0].mass);
+    } else {
+        center = sys.bodies[0].pos;
+    }
+    double sum_mass = sys.bodies[0].mass;
+    for (int i = 1; i < sys.num_bodies(); ++i) {
+        if (sys.bodies[i].pos.x > right_bound) {
+            right_bound = sys.bodies[i].pos.x;
+        }
+        if (sys.bodies[i].pos.x < left_bound) {
+            left_bound = sys.bodies[i].pos.x;
+        }
+        if (sys.bodies[i].pos.y > up_bound) {
+            up_bound = sys.bodies[i].pos.y;
+        }
+        if (sys.bodies[i].pos.y < down_bound) {
+            down_bound = sys.bodies[i].pos.y;
+        }
+        if (center_of_mass) {
+            center += (sys.bodies[i].pos * sys.bodies[i].mass);
+        } else {
+            center += sys.bodies[i].pos;
+        }
+        sum_mass += sys.bodies[i].mass;
+    }
+    if (center_of_mass) {
+        center /= sum_mass;
+    } else {
+        center /= sys.num_bodies();
+    }
+    if (right_bound == left_bound) {
+        double diff = abs(right_bound) * .05;
+        right_bound += diff + 10.0;
+        left_bound -= diff + 10.0;
+    }
+    if (up_bound == down_bound) {
+        double diff = abs(up_bound) * .05;
+        up_bound += diff + 10.0;
+        down_bound -= diff + 10.0;
+    }
+    double max_x = max(abs(right_bound - center.x), abs(left_bound - center.x));
+    double max_y = max(abs(up_bound - center.y), abs(down_bound - center.y));
+    double scale_x = max_x * (2.0 + BORDER_SIZE) / scr->width;
+    double scale_y = max_y * (2.0 + BORDER_SIZE) / scr->height;
+    scale = max(scale_x, scale_y);
+    if (scale > max_scale) {
+        max_scale = scale;
+    }
+    if (scale_option == MAX_SCALE) {
+        if (max_scale > scale) {
+            scale = max_scale;
+        }
+    }
+}
+
 void Game::draw_system() {
     scr->cls();
     // Perform Scaling
-    double max_x = 0.0;
-    double max_y = 0.0;
-    for (Body& body: sys->bodies) {
-        if (abs(body.pos.x) > max_x) {
-            max_x = abs(body.pos.x);
-        }
-        if (abs(body.pos.y) > max_y) {
-            max_y = abs(body.pos.y);
-        }
-    }
-    double scale_x = max_x / (scr->width / SCALE_DENOM);
-    double scale_y = max_y / (scr->height / SCALE_DENOM);
-    if (do_scale && max(scale_x, scale_y) > default_scale) {
-        scale = max(scale_x, scale_y);
-    } else {
-        scale = default_scale;
+    if (scale_option != NO_SCALE) {
+        set_scale_variables();
     }
 
     // Find maximum speed
-    double max_speed = 1.0;
-    for (Body& body: sys->bodies) {
-        double speed = body.speed();
-        if (speed > max_speed) {
-            max_speed = speed;
+    double max_speed = 0.0;
+    sys.bodies[0].speed();
+    for (int i = 1; i < sys.num_bodies(); ++i) {
+        if (sys.bodies[i].speed() > max_speed) {
+            max_speed = sys.bodies[i].speed();
         }
     }
 
-    for (Body& body: sys->bodies) {
+    for (Body& body: sys.bodies) {
         // Draw trails
         Vec2 last_point;
         bool first_point_seen = false;
-        for (Vec2& vec: body.trail) {
+        for (auto& vec: body.trail) {
             if (first_point_seen) {
-                scr->draw_line(scr->width / 2 + vec.x / scale,
-                               scr->height / 2 - vec.y / scale,
-                               scr->width / 2 + last_point.x / scale,
-                               scr->height / 2 - last_point.y / scale,
+                scr->draw_line(scr->width / 2 + (vec.x - center.x) / scale,
+                               scr->height / 2 - (vec.y - center.y) / scale,
+                               scr->width / 2 + (last_point.x - center.x) / scale,
+                               scr->height / 2 - (last_point.y - center.y) / scale,
                                {100, 100, 100});
             } else {
                 first_point_seen = true;
@@ -190,16 +308,16 @@ void Game::draw_system() {
             blue = 255.0;
         }
 
-        int x = lrint(body.pos.x / scale);
-        int y = lrint(body.pos.y / scale);
+        int x = lrint((body.pos.x - center.x) / scale);
+        int y = lrint((body.pos.y - center.y) / scale);
 
         scr->fill_circle(scr->width / 2 + x, scr->height / 2 - y, body_radius,
                          {(Uint8)lrint(red), (Uint8)lrint(green), (Uint8)lrint(blue)});
     }
 
     // Draw Selected Body with blinking crosshair
-    int x = lrint(sys->bodies[selected_body].pos.x / scale);
-    int y = lrint(sys->bodies[selected_body].pos.y / scale);
+    int x = lrint((sys.bodies[selected_body].pos.x - center.x) / scale);
+    int y = lrint((sys.bodies[selected_body].pos.y - center.y) / scale);
     static int i = 0;
     if (i >= 10) {
         scr->fill_circle(scr->width / 2 + x, scr->height / 2 - y, body_radius + 1,
@@ -210,13 +328,18 @@ void Game::draw_system() {
     }
 }
 
+// Currently the selected body is not gauranteed to remiain the same over a single
+// step of simulation. Change this
 void Game::run() {
     while (running) {
         if (simulate) {
             for (int i = 0; i < steps_per_frame; ++i) {
-                sys->step(time_step);
+                sys.step(time_step);
+                if (selected_body >= sys.num_bodies()) {
+                    selected_body = sys.num_bodies() - 1;
+                }
             }
-            for (Body& body: sys->bodies) {
+            for (Body& body: sys.bodies) {
                 body.register_current_position();
             }
         }

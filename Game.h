@@ -6,21 +6,24 @@
 
 class Game {
     private:
-        System* sys;
+        System sys;
         Screen* scr;
-        double scale;
-        double default_scale;
-        bool do_scale;
+        Vec2 center;
+        double scale; // A scaling factor for drawing in units (meters per pixel)
+        double max_scale;
         bool simulate;
         bool running;
+        bool center_of_mass;
+        enum {NO_SCALE, SCALE, MAX_SCALE} scale_option;
         double time_step;
         int steps_per_frame;
         int selected_body;
 
         void handle_input();
+        void set_scale_variables();
         void draw_system();
     public:
-        Game(System* sys, Screen* scr);
+        Game(Screen* scr);
         ~Game();
         void run();
 };

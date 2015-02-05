@@ -9,8 +9,9 @@ class System {
     friend class Game;
     private:
         std::vector<Body> bodies;
+        double minimum_distance;
 
-        void calculate_forces();
+        void calculate_forces(double time_step);
         void move_bodies(double time_step);
     public:
         System();
@@ -22,6 +23,7 @@ class System {
 
         int num_bodies();
         void step(double time_step);
+        void set_minimum_distance(double distance);
 };
 
 #endif

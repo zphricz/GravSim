@@ -51,6 +51,10 @@ void Vec2::zero() {
     y = 0.0;
 }
 
+void Vec2::normalize() {
+    *this /= magnitude();
+}
+
 Vec2& Vec2::operator+=(const Vec2& rhs) {
     x += rhs.x;
     y += rhs.y;
@@ -66,6 +70,12 @@ Vec2& Vec2::operator-=(const Vec2& rhs) {
 Vec2& Vec2::operator*=(const double factor) {
     x *= factor;
     y *= factor;
+    return *this;
+}
+
+Vec2& Vec2::operator/=(const double factor) {
+    x /= factor;
+    y /= factor;
     return *this;
 }
 
@@ -85,5 +95,9 @@ Vec2 Vec2::operator-(const Vec2& rhs) {
 
 Vec2 Vec2::operator*(const double factor) {
     return Vec2(x * factor, y * factor);
+}
+
+Vec2 Vec2::operator/(const double factor) {
+    return Vec2(x / factor, y / factor);
 }
 

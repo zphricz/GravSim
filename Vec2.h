@@ -14,14 +14,17 @@ class Vec2 {
         double magnitude_square();
         double angle();
         void zero();
+        void normalize();
 
         Vec2& operator+=(const Vec2& rhs);
         Vec2& operator-=(const Vec2& rhs);
         Vec2& operator*=(const double factor);
+        Vec2& operator/=(const double factor);
         Vec2& operator=(const Vec2& rhs);
         Vec2 operator+(const Vec2& rhs);
         Vec2 operator-(const Vec2& rhs);
         Vec2 operator*(const double factor);
+        Vec2 operator/(const double factor);
 };
 
 #endif

@@ -19,8 +19,7 @@ double Body::speed()
 
 void Body::flip_movable() {
     movable = !movable;
-    vel.x = 0.0;
-    vel.y = 0.0;
+    vel.zero();
 }
 
 bool Body::is_movable() {

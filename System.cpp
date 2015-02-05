@@ -7,20 +7,21 @@ using std::max;
 
 const double UGC = 6.67384E-11;
 
-System::System() {
+System::System() :
+    minimum_distance(0.0) {
 }
 
 System::~System() {
 }
 
-void System::calculate_forces() {
+void System::calculate_forces(double time_step) {
     for (int i = 0; i < num_bodies(); ++i) {
         for (int j = i + 1; j < num_bodies(); ++j) {
             Vec2 delta_pos = bodies[j].pos - bodies[i].pos;
             double theta = delta_pos.angle();
             double force_mag = UGC * bodies[i].mass * bodies[j].mass /
                 delta_pos.magnitude_square();
-            Vec2 force_vec = Vec2(force_mag * cos(theta),
+            Vec2 force_vec(force_mag * cos(theta),
                                   force_mag * sin(theta));
             bodies[i].force += force_vec;
             bodies[j].force -= force_vec;
@@ -31,10 +32,33 @@ void System::calculate_forces() {
 void System::move_bodies(double time_step) {
     for (Body& body: bodies) {
         if (body.is_movable()) {
-            body.vel += body.force * (time_step / body.mass);
-            body.pos += body.vel * time_step;
+            body.vel += (body.force * (time_step / body.mass));
+            body.pos += (body.vel * time_step);
         }
         body.force.zero();
+    }
+
+    // Detect collisions
+    for (int i = 0; i < num_bodies(); ++i) {
+        for (int j = i + 1; j < num_bodies(); ++j) {
+            Vec2 delta_pos = bodies[j].pos - bodies[i].pos;
+            if (delta_pos.magnitude() < minimum_distance) {
+                Vec2 momentum = (bodies[j].vel * bodies[j].mass) + (bodies[i].vel * bodies[i].mass);
+                Vec2 velocity = momentum / (bodies[i].mass + bodies[j].mass);
+                if (bodies[i].mass > bodies[j].mass) {
+                    bodies[i].mass += bodies[j].mass;
+                    bodies[i].vel = velocity;
+                    bodies.erase(bodies.begin() + j);
+                    j -= 1;
+                } else {
+                    bodies[j].mass += bodies[i].mass;
+                    bodies[j].vel = velocity;
+                    bodies.erase(bodies.begin() + i);
+                    i -= 1;
+                    break;
+                }
+            }
+        }
     }
 }
 
@@ -55,7 +79,11 @@ int System::num_bodies() {
 }
 
 void System::step(double time_step) {
-    calculate_forces();
+    calculate_forces(time_step);
     move_bodies(time_step);
+}
+
+void System::set_minimum_distance(double distance) {
+    minimum_distance = distance;
 }
 
