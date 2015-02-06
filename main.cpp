@@ -1,6 +1,4 @@
 #include "Screen.h"
-#include "System.h"
-#include "Body.h"
 #include "Game.h"
 #include <iostream>
 

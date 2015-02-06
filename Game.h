@@ -13,7 +13,7 @@ class Game {
         double max_scale;
         bool simulate;
         bool running;
-        bool center_of_mass;
+        enum {CENTER_OF_MASS, AVERAGE_POSITION, BOUNDS} center_option;
         enum {NO_SCALE, SCALE, MAX_SCALE} scale_option;
         double time_step;
         int steps_per_frame;

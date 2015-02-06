@@ -3,7 +3,9 @@
 
 #include <SDL2/SDL.h>
 
-#define CLIPPED 1
+#include <string>
+
+#define CLIPPED 0
 #define likely(x)   __builtin_expect((x),1)
 #define unlikely(x) __builtin_expect((x),0)
 
@@ -20,6 +22,10 @@ class Screen {
         SDL_Window* window;
         SDL_Renderer* renderer;
         SDL_Texture* texture;
+        bool recording;
+        int image_number;
+        std::string image_dir;
+        int z_fill;
 
         inline Uint32& pixel_at(int x, int y);
 
@@ -76,6 +82,8 @@ class Screen {
         void fill_circle(int x, int y, int r);
         void fill_circle(int x, int y, int r, Color c);
         void write_tga(const char * name);
+        void toggle_recording();
+        void set_recording_style(const char * image_dir, int z_fill);
 };
 
 #endif

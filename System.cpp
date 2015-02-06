@@ -15,7 +15,7 @@ System::~System() {
 }
 
 void System::calculate_forces(double time_step) {
-    for (int i = 0; i < num_bodies(); ++i) {
+    for (int i = 0; i < num_bodies() - 1; ++i) {
         for (int j = i + 1; j < num_bodies(); ++j) {
             Vec2 delta_pos = bodies[j].pos - bodies[i].pos;
             double theta = delta_pos.angle();

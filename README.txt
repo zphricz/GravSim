@@ -22,8 +22,11 @@ You can interact with the simulation by pressing keys on your keyboard:
     3: Turn scaling off
     4: Turn scaling on (will shrink window)
     5: Turn scaling on (will not shrink window)
-    6: Toggle centering based on the center of mass of all bodies, and the
-       average position of all bodies
+    6: Make the center of the screen the average position of the bodies
+    7: Make the center of the screen the center of mass of the bodies
+    8: Make the center of the screen the average of the positions of the
+       outermost bodies
+    0: Toggle between recording video and not
     Shift: Switch selected body
     Enter: Toggle between simulating the program and not
     Escape: Stop the program

@@ -1,10 +1,13 @@
 #include <fstream>
+#include <sstream>
+#include <iomanip>
 #include "Screen.h"
-using std::ofstream;
-using std::ios_base;
+
+using namespace std;
 
 Screen::Screen(int size_x, int size_y, bool full_screen, const char * name,
                 bool vsync, bool direct) :
+    recording(false),
     width(size_x),
     height(size_y),
     rshift(16),
@@ -66,6 +69,13 @@ Uint32 Screen::format_color(Color c) {
 }
 
 void Screen::commit() {
+    if (recording) {
+        ostringstream convert;
+        convert << setw(z_fill) << setfill('0') << image_number;
+        string name = image_dir + "/image_" + convert.str() + ".tga";
+        write_tga(name.c_str());
+        image_number++;
+    }
     if (direct_draw) {
         SDL_UnlockTexture(texture);
     } else {
@@ -390,5 +400,15 @@ void Screen::write_tga(const char * name) {
             file.put(b).put(g).put(r);
         }
     }
+}
+
+void Screen::toggle_recording() {
+    recording = !recording;
+}
+
+void Screen::set_recording_style(const char * image_dir, int z_fill) {
+    this->image_dir = string(image_dir);
+    this->z_fill = z_fill;
+    image_number = 0;
 }
 

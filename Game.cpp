@@ -91,7 +91,19 @@ void Game::handle_input() {
                 break;
             }
             case SDLK_6: {
-                center_of_mass = !center_of_mass;
+                center_option = AVERAGE_POSITION;
+                break;
+            }
+            case SDLK_7: {
+                center_option = CENTER_OF_MASS;
+                break;
+            }
+            case SDLK_8: {
+                center_option = BOUNDS;
+                break;
+            }
+            case SDLK_0: {
+                scr->toggle_recording();
                 break;
             }
             default: {
@@ -154,22 +166,22 @@ Game::Game(Screen* scr) :
     scr(scr),
     simulate(false),
     running(true),
-    center_of_mass(false),
+    center_option(AVERAGE_POSITION),
     scale_option(MAX_SCALE),
     time_step(50.0),
     steps_per_frame(100),
     selected_body(0) {
 #if 1
     //                     x_pos         y_pos    x_vel    y_vel    mass trail
-    sys.add_body(            0.0,          0.0,     0.0,     0.0, 6.0E24,   0);
-    sys.add_body(    400000000.0,          0.0,     0.0,  1006.0, 7.0E22, 150);
-    sys.add_body(    420000000.0,          0.0,     0.0,  1500.0, 4.0E20, 150);
-    sys.add_body(            0.0,  400000000.0, -1006.0,     0.0, 7.0E22, 150);
-    sys.add_body(            0.0,  420000000.0, -1500.0,     0.0, 4.0E20, 150);
-    sys.add_body(   -400000000.0,          0.0,     0.0, -1006.0, 7.0E22, 150);
-    sys.add_body(   -420000000.0,          0.0,     0.0, -1500.0, 4.0E20, 150);
-    sys.add_body(            0.0, -400000000.0,  1006.0,     0.0, 7.0E22, 150);
-    sys.add_body(            0.0, -420000000.0,  1500.0,     0.0, 4.0E20, 150);
+    sys.add_body(            0.0,          0.0,     0.0,     0.0, 6.0E24, 500);
+    sys.add_body(    400000000.0,          0.0,     0.0,  1006.0, 7.0E22, 500);
+    sys.add_body(    420000000.0,          0.0,     0.0,  1500.0, 4.0E20, 500);
+    sys.add_body(            0.0,  400000000.0, -1006.0,     0.0, 7.0E22, 500);
+    sys.add_body(            0.0,  420000000.0, -1500.0,     0.0, 4.0E20, 500);
+    sys.add_body(   -400000000.0,          0.0,     0.0, -1006.0, 7.0E22, 500);
+    sys.add_body(   -420000000.0,          0.0,     0.0, -1500.0, 4.0E20, 500);
+    sys.add_body(            0.0, -400000000.0,  1006.0,     0.0, 7.0E22, 500);
+    sys.add_body(            0.0, -420000000.0,  1500.0,     0.0, 4.0E20, 500);
     sys.set_minimum_distance(4000000.0);
 #else
     srand(time(0));
@@ -181,15 +193,16 @@ Game::Game(Screen* scr) :
         double y_pos = dis(gen);
         double x_vel = 0.0;
         double y_vel = 0.0;
-        x_vel = dis(gen) / 1000000.0;
-        y_vel = dis(gen) / 1000000.0;
+        x_vel = 0.0;
+        y_vel = 0.0;
         double mass = 100.0;
-        sys.add_body(x_pos, y_pos, x_vel, y_vel, mass, 150);
+        sys.add_body(x_pos, y_pos, x_vel, y_vel, mass, 1000);
     }
     sys.set_minimum_distance(2.0);
 #endif
     set_scale_variables();
     max_scale = scale;
+    scr->set_recording_style("images", 5);
 }
 
 Game::~Game() {
@@ -200,10 +213,10 @@ void Game::set_scale_variables() {
     double left_bound = sys.bodies[0].pos.x;
     double up_bound = sys.bodies[0].pos.y;
     double down_bound = sys.bodies[0].pos.y;
-    if (center_of_mass) {
-        center = (sys.bodies[0].pos * sys.bodies[0].mass);
-    } else {
+    if (center_option == AVERAGE_POSITION) {
         center = sys.bodies[0].pos;
+    } else if (center_option == CENTER_OF_MASS) {
+        center = (sys.bodies[0].pos * sys.bodies[0].mass);
     }
     double sum_mass = sys.bodies[0].mass;
     for (int i = 1; i < sys.num_bodies(); ++i) {
@@ -219,17 +232,12 @@ void Game::set_scale_variables() {
         if (sys.bodies[i].pos.y < down_bound) {
             down_bound = sys.bodies[i].pos.y;
         }
-        if (center_of_mass) {
+        if (center_option == CENTER_OF_MASS) {
             center += (sys.bodies[i].pos * sys.bodies[i].mass);
-        } else {
+        } else if (center_option == AVERAGE_POSITION) {
             center += sys.bodies[i].pos;
         }
         sum_mass += sys.bodies[i].mass;
-    }
-    if (center_of_mass) {
-        center /= sum_mass;
-    } else {
-        center /= sys.num_bodies();
     }
     if (right_bound == left_bound) {
         double diff = abs(right_bound) * .05;
@@ -241,6 +249,20 @@ void Game::set_scale_variables() {
         up_bound += diff + 10.0;
         down_bound -= diff + 10.0;
     }
+    switch (center_option) {
+    case AVERAGE_POSITION:
+        center /= sys.num_bodies();
+        break;
+    case CENTER_OF_MASS:
+        center /= sum_mass;
+        break;
+    case BOUNDS:
+        center.x = (right_bound + left_bound) / 2.0;
+        center.y = (up_bound + down_bound) / 2.0;
+        break;
+    default:
+        break;
+    }
     double max_x = max(abs(right_bound - center.x), abs(left_bound - center.x));
     double max_y = max(abs(up_bound - center.y), abs(down_bound - center.y));
     double scale_x = max_x * (2.0 + BORDER_SIZE) / scr->width;
@@ -250,9 +272,7 @@ void Game::set_scale_variables() {
         max_scale = scale;
     }
     if (scale_option == MAX_SCALE) {
-        if (max_scale > scale) {
-            scale = max_scale;
-        }
+        scale = max_scale;
     }
 }
 
@@ -272,8 +292,8 @@ void Game::draw_system() {
         }
     }
 
+    // Draw trails
     for (Body& body: sys.bodies) {
-        // Draw trails
         Vec2 last_point;
         bool first_point_seen = false;
         for (auto& vec: body.trail) {
@@ -288,8 +308,10 @@ void Game::draw_system() {
             }
             last_point = vec;
         }
+    }
 
-        // Fill in Bodies
+    // Fill in Bodies
+    for (Body& body: sys.bodies) {
         double magnitude = 511.0 * body.speed() / max_speed;
         double blue = 0.0;
         double red;
