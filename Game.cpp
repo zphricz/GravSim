@@ -142,19 +142,19 @@ void Game::handle_input() {
     }
     bool register_new_position = false;
     if (up_pressed) {
-        sys.bodies[selected_body].pos.y += move_factor * scale;
+        sys.bodies[selected_body].pos.y() += move_factor * scale;
         register_new_position = true;
     }
     if (down_pressed) {
-        sys.bodies[selected_body].pos.y -= move_factor * scale;
+        sys.bodies[selected_body].pos.y() -= move_factor * scale;
         register_new_position = true;
     }
     if (left_pressed) {
-        sys.bodies[selected_body].pos.x -= move_factor * scale;
+        sys.bodies[selected_body].pos.x() -= move_factor * scale;
         register_new_position = true;
     }
     if (right_pressed) {
-        sys.bodies[selected_body].pos.x += move_factor * scale;
+        sys.bodies[selected_body].pos.x() += move_factor * scale;
         register_new_position = true;
     }
     if (register_new_position) {
@@ -171,7 +171,7 @@ Game::Game(Screen* scr) :
     time_step(50.0),
     steps_per_frame(100),
     selected_body(0) {
-#if 1
+#if 0
     //                     x_pos         y_pos    x_vel    y_vel    mass trail
     sys.add_body(            0.0,          0.0,     0.0,     0.0, 6.0E24, 500);
     sys.add_body(    400000000.0,          0.0,     0.0,  1006.0, 7.0E22, 500);
@@ -186,7 +186,7 @@ Game::Game(Screen* scr) :
 #else
     srand(time(0));
     random_device rd;
-    mt19937 gen(rd());
+    mt19937_64 gen(rd());
     uniform_real_distribution<> dis(-100, 100);
     for (int i = 0; i < 100; ++i) {
         double x_pos = dis(gen);
@@ -209,10 +209,10 @@ Game::~Game() {
 }
 
 void Game::set_scale_variables() {
-    double right_bound = sys.bodies[0].pos.x;
-    double left_bound = sys.bodies[0].pos.x;
-    double up_bound = sys.bodies[0].pos.y;
-    double down_bound = sys.bodies[0].pos.y;
+    double right_bound = sys.bodies[0].pos.x();
+    double left_bound = sys.bodies[0].pos.x();
+    double up_bound = sys.bodies[0].pos.y();
+    double down_bound = sys.bodies[0].pos.y();
     if (center_option == AVERAGE_POSITION) {
         center = sys.bodies[0].pos;
     } else if (center_option == CENTER_OF_MASS) {
@@ -220,17 +220,17 @@ void Game::set_scale_variables() {
     }
     double sum_mass = sys.bodies[0].mass;
     for (int i = 1; i < sys.num_bodies(); ++i) {
-        if (sys.bodies[i].pos.x > right_bound) {
-            right_bound = sys.bodies[i].pos.x;
+        if (sys.bodies[i].pos.x() > right_bound) {
+            right_bound = sys.bodies[i].pos.x();
         }
-        if (sys.bodies[i].pos.x < left_bound) {
-            left_bound = sys.bodies[i].pos.x;
+        if (sys.bodies[i].pos.x() < left_bound) {
+            left_bound = sys.bodies[i].pos.x();
         }
-        if (sys.bodies[i].pos.y > up_bound) {
-            up_bound = sys.bodies[i].pos.y;
+        if (sys.bodies[i].pos.y() > up_bound) {
+            up_bound = sys.bodies[i].pos.y();
         }
-        if (sys.bodies[i].pos.y < down_bound) {
-            down_bound = sys.bodies[i].pos.y;
+        if (sys.bodies[i].pos.y() < down_bound) {
+            down_bound = sys.bodies[i].pos.y();
         }
         if (center_option == CENTER_OF_MASS) {
             center += (sys.bodies[i].pos * sys.bodies[i].mass);
@@ -257,14 +257,14 @@ void Game::set_scale_variables() {
         center /= sum_mass;
         break;
     case BOUNDS:
-        center.x = (right_bound + left_bound) / 2.0;
-        center.y = (up_bound + down_bound) / 2.0;
+        center.x() = (right_bound + left_bound) / 2.0;
+        center.y() = (up_bound + down_bound) / 2.0;
         break;
     default:
         break;
     }
-    double max_x = max(abs(right_bound - center.x), abs(left_bound - center.x));
-    double max_y = max(abs(up_bound - center.y), abs(down_bound - center.y));
+    double max_x = max(abs(right_bound - center.x()), abs(left_bound - center.x()));
+    double max_y = max(abs(up_bound - center.y()), abs(down_bound - center.y()));
     double scale_x = max_x * (2.0 + BORDER_SIZE) / scr->width;
     double scale_y = max_y * (2.0 + BORDER_SIZE) / scr->height;
     scale = max(scale_x, scale_y);
@@ -293,16 +293,16 @@ void Game::draw_system() {
     }
 
     // Draw trails
+    scr->set_color(100, 100, 100);
     for (Body& body: sys.bodies) {
-        Vec2 last_point;
+        Vec2d last_point;
         bool first_point_seen = false;
         for (auto& vec: body.trail) {
             if (first_point_seen) {
-                scr->draw_line(scr->width / 2 + (vec.x - center.x) / scale,
-                               scr->height / 2 - (vec.y - center.y) / scale,
-                               scr->width / 2 + (last_point.x - center.x) / scale,
-                               scr->height / 2 - (last_point.y - center.y) / scale,
-                               {100, 100, 100});
+                scr->draw_line(scr->width / 2 + (vec.x() - center.x()) / scale,
+                               scr->height / 2 - (vec.y() - center.y()) / scale,
+                               scr->width / 2 + (last_point.x() - center.x()) / scale,
+                               scr->height / 2 - (last_point.y() - center.y()) / scale);
             } else {
                 first_point_seen = true;
             }
@@ -330,16 +330,16 @@ void Game::draw_system() {
             blue = 255.0;
         }
 
-        int x = lrint((body.pos.x - center.x) / scale);
-        int y = lrint((body.pos.y - center.y) / scale);
+        int x = lrint((body.pos.x() - center.x()) / scale);
+        int y = lrint((body.pos.y() - center.y()) / scale);
 
         scr->fill_circle(scr->width / 2 + x, scr->height / 2 - y, body_radius,
                          {(Uint8)lrint(red), (Uint8)lrint(green), (Uint8)lrint(blue)});
     }
 
     // Draw Selected Body with blinking crosshair
-    int x = lrint((sys.bodies[selected_body].pos.x - center.x) / scale);
-    int y = lrint((sys.bodies[selected_body].pos.y - center.y) / scale);
+    int x = lrint((sys.bodies[selected_body].pos.x() - center.x()) / scale);
+    int y = lrint((sys.bodies[selected_body].pos.y() - center.y()) / scale);
     static int i = 0;
     if (i >= 10) {
         scr->fill_circle(scr->width / 2 + x, scr->height / 2 - y, body_radius + 1,

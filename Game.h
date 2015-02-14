@@ -8,7 +8,7 @@ class Game {
     private:
         System sys;
         Screen* scr;
-        Vec2 center;
+        Vec2d center;
         double scale; // A scaling factor for drawing in units (meters per pixel)
         double max_scale;
         bool simulate;

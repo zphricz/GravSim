@@ -2,19 +2,19 @@
 #define BODY_H
 
 #include <deque>
-#include "Vec2.h"
+#include "Vec.h"
 
 class Body {
     friend class System;
     friend class Game;
     private:
         double mass;
-        Vec2 pos;
-        Vec2 vel;
-        Vec2 force;
+        Vec2d pos;
+        Vec2d vel;
+        Vec2d force;
         unsigned int trail_length;
         bool movable;
-        std::deque<Vec2> trail;
+        std::deque<Vec2d> trail;
 
 
         double speed();

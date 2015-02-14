@@ -17,12 +17,12 @@ System::~System() {
 void System::calculate_forces(double time_step) {
     for (int i = 0; i < num_bodies() - 1; ++i) {
         for (int j = i + 1; j < num_bodies(); ++j) {
-            Vec2 delta_pos = bodies[j].pos - bodies[i].pos;
-            double theta = delta_pos.angle();
+            Vec2d delta_pos = bodies[j].pos - bodies[i].pos;
+            double theta = delta_pos.theta();
             double force_mag = UGC * bodies[i].mass * bodies[j].mass /
                 delta_pos.magnitude_square();
-            Vec2 force_vec(force_mag * cos(theta),
-                                  force_mag * sin(theta));
+            Vec2d force_vec(theta);
+            force_vec *= force_mag;
             bodies[i].force += force_vec;
             bodies[j].force -= force_vec;
         }
@@ -32,8 +32,8 @@ void System::calculate_forces(double time_step) {
 void System::move_bodies(double time_step) {
     for (Body& body: bodies) {
         if (body.is_movable()) {
-            body.vel += (body.force * (time_step / body.mass));
-            body.pos += (body.vel * time_step);
+            body.vel += body.force * (time_step / body.mass);
+            body.pos += body.vel * time_step;
         }
         body.force.zero();
     }
@@ -41,10 +41,10 @@ void System::move_bodies(double time_step) {
     // Detect collisions
     for (int i = 0; i < num_bodies(); ++i) {
         for (int j = i + 1; j < num_bodies(); ++j) {
-            Vec2 delta_pos = bodies[j].pos - bodies[i].pos;
+            Vec2d delta_pos = bodies[j].pos - bodies[i].pos;
             if (delta_pos.magnitude() < minimum_distance) {
-                Vec2 momentum = (bodies[j].vel * bodies[j].mass) + (bodies[i].vel * bodies[i].mass);
-                Vec2 velocity = momentum / (bodies[i].mass + bodies[j].mass);
+                Vec2d momentum = bodies[j].vel * bodies[j].mass + bodies[i].vel * bodies[i].mass;
+                Vec2d velocity = momentum / (bodies[i].mass + bodies[j].mass);
                 if (bodies[i].mass > bodies[j].mass) {
                     bodies[i].mass += bodies[j].mass;
                     bodies[i].vel = velocity;
