@@ -1,4 +1,4 @@
-#include "Screen.h"
+
 #include "Game.h"
 #include <iostream>
 
@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
         full_screen = false;
     }
 
-    Screen scr(screen_width, screen_height, full_screen, "GravSim", true, true);
+    SoftScreen scr(screen_width, screen_height, "GravSim", full_screen, true);
     Game g(&scr);
     g.run();
     return 0;

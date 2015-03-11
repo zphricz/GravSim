@@ -7,8 +7,8 @@
 class Game {
     private:
         System sys;
-        Screen* scr;
-        Vec2d center;
+        SoftScreen* scr;
+        Linear::Vec2d center;
         double scale; // A scaling factor for drawing in units (meters per pixel)
         double max_scale;
         bool simulate;
@@ -23,7 +23,7 @@ class Game {
         void set_scale_variables();
         void draw_system();
     public:
-        Game(Screen* scr);
+        Game(SoftScreen* scr);
         ~Game();
         void run();
 };

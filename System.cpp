@@ -2,8 +2,8 @@
 #include <cmath>
 #include "System.h"
 
-using std::vector;
-using std::max;
+using namespace Linear;
+using namespace std;
 
 const double UGC = 6.67384E-11;
 

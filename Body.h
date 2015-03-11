@@ -9,12 +9,12 @@ class Body {
     friend class Game;
     private:
         double mass;
-        Vec2d pos;
-        Vec2d vel;
-        Vec2d force;
+        Linear::Vec2d pos;
+        Linear::Vec2d vel;
+        Linear::Vec2d force;
         unsigned int trail_length;
         bool movable;
-        std::deque<Vec2d> trail;
+        std::deque<Linear::Vec2d> trail;
 
 
         double speed();
