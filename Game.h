@@ -4,6 +4,9 @@
 #include "System.h"
 #include "Screen.h"
 
+enum class CenterType { CENTER_OF_MASS, AVERAGE_POSITION, BOUNDS };
+enum class ScaleType { NO_SCALE, SCALE, MAX_SCALE };
+
 class Game {
 private:
   System sys;
@@ -13,8 +16,8 @@ private:
   double max_scale;
   bool simulate;
   bool running;
-  enum { CENTER_OF_MASS, AVERAGE_POSITION, BOUNDS } center_option;
-  enum { NO_SCALE, SCALE, MAX_SCALE } scale_option;
+  CenterType center_type;
+  ScaleType scale_type;
   double time_step;
   int steps_per_frame;
   int selected_body;

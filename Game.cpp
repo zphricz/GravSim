@@ -79,28 +79,28 @@ void Game::handle_input() {
         break;
       }
       case SDLK_3: {
-        scale_option = NO_SCALE;
+        scale_type = ScaleType::NO_SCALE;
         break;
       }
       case SDLK_4: {
-        scale_option = SCALE;
+        scale_type = ScaleType::SCALE;
         break;
       }
       case SDLK_5: {
-        scale_option = MAX_SCALE;
+        scale_type = ScaleType::MAX_SCALE;
         max_scale = scale;
         break;
       }
       case SDLK_6: {
-        center_option = AVERAGE_POSITION;
+        center_type = CenterType::AVERAGE_POSITION;
         break;
       }
       case SDLK_7: {
-        center_option = CENTER_OF_MASS;
+        center_type = CenterType::CENTER_OF_MASS;
         break;
       }
       case SDLK_8: {
-        center_option = BOUNDS;
+        center_type = CenterType::BOUNDS;
         break;
       }
       case SDLK_0: {
@@ -158,8 +158,8 @@ void Game::handle_input() {
 }
 
 Game::Game(SoftScreen *scr)
-    : scr(scr), simulate(false), running(true), center_option(AVERAGE_POSITION),
-      scale_option(MAX_SCALE), time_step(50.0), steps_per_frame(100),
+    : scr(scr), simulate(false), running(true), center_type(CenterType::AVERAGE_POSITION),
+      scale_type(ScaleType::MAX_SCALE), time_step(50.0), steps_per_frame(100),
       selected_body(0) {
 #if 1
   //                     x_pos         y_pos    x_vel    y_vel    mass trail
@@ -202,9 +202,9 @@ void Game::set_scale_variables() {
   double left_bound = sys.bodies[0].pos.x;
   double up_bound = sys.bodies[0].pos.y;
   double down_bound = sys.bodies[0].pos.y;
-  if (center_option == AVERAGE_POSITION) {
+  if (center_type == CenterType::AVERAGE_POSITION) {
     center = sys.bodies[0].pos;
-  } else if (center_option == CENTER_OF_MASS) {
+  } else if (center_type == CenterType::CENTER_OF_MASS) {
     center = (sys.bodies[0].pos * sys.bodies[0].mass);
   }
   double sum_mass = sys.bodies[0].mass;
@@ -221,9 +221,9 @@ void Game::set_scale_variables() {
     if (sys.bodies[i].pos.y < down_bound) {
       down_bound = sys.bodies[i].pos.y;
     }
-    if (center_option == CENTER_OF_MASS) {
+    if (center_type == CenterType::CENTER_OF_MASS) {
       center += (sys.bodies[i].pos * sys.bodies[i].mass);
-    } else if (center_option == AVERAGE_POSITION) {
+    } else if (center_type == CenterType::AVERAGE_POSITION) {
       center += sys.bodies[i].pos;
     }
     sum_mass += sys.bodies[i].mass;
@@ -238,14 +238,14 @@ void Game::set_scale_variables() {
     up_bound += diff + 10.0;
     down_bound -= diff + 10.0;
   }
-  switch (center_option) {
-  case AVERAGE_POSITION:
+  switch (center_type) {
+  case CenterType::AVERAGE_POSITION:
     center /= sys.num_bodies();
     break;
-  case CENTER_OF_MASS:
+  case CenterType::CENTER_OF_MASS:
     center /= sum_mass;
     break;
-  case BOUNDS:
+  case CenterType::BOUNDS:
     center.x = (right_bound + left_bound) / 2.0;
     center.y = (up_bound + down_bound) / 2.0;
     break;
@@ -260,7 +260,7 @@ void Game::set_scale_variables() {
   if (scale > max_scale) {
     max_scale = scale;
   }
-  if (scale_option == MAX_SCALE) {
+  if (scale_type == ScaleType::MAX_SCALE) {
     scale = max_scale;
   }
 }
@@ -268,7 +268,7 @@ void Game::set_scale_variables() {
 void Game::draw_system() {
   scr->cls();
   // Perform Scaling
-  if (scale_option != NO_SCALE) {
+  if (scale_type != ScaleType::NO_SCALE) {
     set_scale_variables();
   }
 
