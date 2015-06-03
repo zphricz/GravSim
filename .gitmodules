@@ -1,0 +1,6 @@
+[submodule "Screen"]
+	path = Screen
+	url = https://github.com/zphricz/Screen
+[submodule "Linear"]
+	path = Linear
+	url = https://github.com/zphricz/Linear
