@@ -10,15 +10,15 @@ Body::~Body() {}
 double Body::speed() { return vel.magnitude(); }
 
 void Body::flip_movable() {
-    movable = !movable;
-    vel.zero();
+  movable = !movable;
+  vel.zero();
 }
 
 bool Body::is_movable() { return movable; }
 
 void Body::register_current_position() {
-    trail.push_back(pos);
-    if (trail.size() > trail_length) {
-        trail.pop_front();
-    }
+  trail.push_back(pos);
+  if (trail.size() > trail_length) {
+    trail.pop_front();
+  }
 }
